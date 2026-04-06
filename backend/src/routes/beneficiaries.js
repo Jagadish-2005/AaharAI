@@ -214,4 +214,62 @@ router.get('/lookup/:rationCard', (req, res) => {
   }
 });
 
+// GET /api/beneficiaries/me/dashboard - Beneficiary dashboard
+router.get('/me/dashboard', (req, res) => {
+  try {
+    if (req.user.type !== 'beneficiary') return res.status(403).json({ error: 'Access denied.' });
+
+    const month = parseInt(req.query.month) || new Date().getMonth() + 1;
+    const year = parseInt(req.query.year) || new Date().getFullYear();
+
+    const beneficiary = db.prepare(`
+      SELECT b.*, v.name as vendor_name, v.shop_name, v.location, v.phone as vendor_phone
+      FROM beneficiaries b
+      JOIN vendors v ON v.id = b.vendor_id
+      WHERE b.id = ?
+    `).get(req.user.id);
+
+    if (!beneficiary) return res.status(404).json({ error: 'Beneficiary not found' });
+
+    // Rations quota
+    const entitlements = db.prepare(`
+      SELECT er.*, c.name as commodity_name, c.unit,
+        COALESCE(bms.collected_qty, 0) as collected_qty,
+        COALESCE(bms.status, 'pending') as collection_status
+      FROM entitlement_rules er
+      JOIN commodities c ON c.id = er.commodity_id
+      LEFT JOIN beneficiary_monthly_status bms ON bms.beneficiary_id = ? AND bms.commodity_id = er.commodity_id AND bms.month = ? AND bms.year = ?
+      WHERE er.card_type = ?
+    `).all(beneficiary.id, month, year, beneficiary.card_type);
+
+    const entitlementDetails = entitlements.map(e => ({
+      commodityId: e.commodity_id,
+      commodityName: e.commodity_name,
+      unit: e.unit,
+      entitledQty: Math.min(e.qty_per_person * beneficiary.family_size, e.qty_per_person * e.max_family_cap),
+      collectedQty: e.collected_qty,
+      remainingQty: Math.max(0, Math.min(e.qty_per_person * beneficiary.family_size, e.qty_per_person * e.max_family_cap) - e.collected_qty),
+      status: e.collection_status
+    }));
+
+    // Vendor stock
+    const vendorStock = db.prepare(`
+      SELECT vs.remaining_qty, c.name as commodity_name, c.unit
+      FROM vendor_stock vs
+      JOIN commodities c ON vs.commodity_id = c.id
+      WHERE vs.vendor_id = ? AND vs.month = ? AND vs.year = ?
+    `).all(beneficiary.vendor_id, month, year);
+
+    res.json({
+      beneficiary,
+      entitlements: entitlementDetails,
+      vendorStock,
+      month, year
+    });
+  } catch (err) {
+    console.error('Beneficiary dashboard error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 export default router;

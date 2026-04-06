@@ -1,6 +1,7 @@
 import { Handshake } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { io } from 'socket.io-client';
 
 export default function GrievancesPage() {
   const [vendorData, setVendorData] = useState([]);
@@ -8,6 +9,18 @@ export default function GrievancesPage() {
 
   useEffect(() => {
     fetchGrievances();
+
+    // Setup real-time updates
+    const socket = io('http://localhost:3001');
+    socket.on('connect', () => {
+      socket.emit('join', { role: 'admin' });
+    });
+    
+    socket.on('grievance:new', () => {
+      fetchGrievances();
+    });
+
+    return () => socket.disconnect();
   }, []);
 
   const fetchGrievances = async () => {
@@ -75,9 +88,9 @@ export default function GrievancesPage() {
                           <td style={{ padding: '16px', fontSize: 14 }}>
                             {new Date(g.created_at).toLocaleDateString()}
                           </td>
-                          <td style={{ padding: '16px', fontSize: 14 }}>
+                          <td style={{ padding: '16px', fontSize: '14px' }}>
                             <div style={{ fontWeight: 600 }}>{g.beneficiary_name}</div>
-                            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{g.ration_card_number}</div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{g.ration_card_no}</div>
                           </td>
                           <td style={{ padding: '16px', fontSize: 14 }}>
                             <span style={{ textTransform: 'capitalize', fontWeight: 500 }}>

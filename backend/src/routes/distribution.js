@@ -274,7 +274,9 @@ router.post('/distribute', vendorOnly, (req, res) => {
       `).all(vendorId, month, year);
 
       io.to(`vendor:${vendorId}`).emit('stock:updated', { stock: updatedStock });
+      io.to(`vendor_followers:${vendorId}`).emit('stock:updated', { stock: updatedStock });
       io.to('admin').emit('stock:updated', { vendorId, stock: updatedStock });
+      io.to(`beneficiary:${beneficiaryId}`).emit('beneficiary:stock_updated');
     }
 
     res.json({

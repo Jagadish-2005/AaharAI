@@ -10,6 +10,12 @@ export function setupSocketIO(io) {
       } else if (data.role === 'vendor' && data.vendorId) {
         socket.join(`vendor:${data.vendorId}`);
         console.log(`🏪 Vendor ${data.vendorId} joined: ${socket.id}`);
+      } else if (data.role === 'beneficiary' && data.beneficiaryId) {
+        socket.join(`beneficiary:${data.beneficiaryId}`);
+        if (data.vendorId) {
+          socket.join(`vendor_followers:${data.vendorId}`);
+        }
+        console.log(`👤 Beneficiary ${data.beneficiaryId} joined: ${socket.id}`);
       }
     });
 

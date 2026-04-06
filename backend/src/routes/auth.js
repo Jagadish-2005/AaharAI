@@ -93,6 +93,42 @@ router.post('/vendor/login', (req, res) => {
   }
 });
 
+// POST /api/auth/beneficiary/login
+router.post('/beneficiary/login', (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return res.status(400).json({ error: 'Phone number is required.' });
+    }
+
+    const beneficiary = db.prepare('SELECT id, name, ration_card_no, phone FROM beneficiaries WHERE phone = ? AND is_active = 1').get(phone);
+    if (!beneficiary) {
+      return res.status(401).json({ error: 'Invalid credentials or account disabled.' });
+    }
+
+    const token = generateToken({
+      id: beneficiary.id,
+      rationCardNo: beneficiary.ration_card_no,
+      role: 'beneficiary',
+      type: 'beneficiary'
+    });
+
+    res.json({
+      token,
+      user: {
+        id: beneficiary.id,
+        name: beneficiary.name,
+        rationCardNo: beneficiary.ration_card_no,
+        phone: beneficiary.phone,
+        role: 'beneficiary'
+      }
+    });
+  } catch (err) {
+    console.error('Beneficiary login error:', err);
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
 // GET /api/auth/me - Get current user info
 router.get('/me', (req, res) => {
   // This is used after verifyToken middleware
@@ -101,6 +137,14 @@ router.get('/me', (req, res) => {
   if (req.user.type === 'admin') {
     const admin = db.prepare('SELECT id, username, email, full_name, role FROM admins WHERE id = ?').get(req.user.id);
     return res.json({ user: admin, type: 'admin' });
+  } else if (req.user.type === 'beneficiary') {
+    const beneficiary = db.prepare(`
+      SELECT b.id, b.name, b.ration_card_no as rationCardNo, b.phone, b.address, b.family_size, b.card_type, v.shop_name as vendor_shop_name
+      FROM beneficiaries b
+      LEFT JOIN vendors v ON v.id = b.vendor_id
+      WHERE b.id = ?
+    `).get(req.user.id);
+    return res.json({ user: { ...beneficiary, role: 'beneficiary' }, type: 'beneficiary' });
   } else {
     const vendor = db.prepare('SELECT id, vendor_code, name, shop_name, location, district, phone FROM vendors WHERE id = ?').get(req.user.id);
     return res.json({ user: vendor, type: 'vendor' });
