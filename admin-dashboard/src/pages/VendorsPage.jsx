@@ -1,4 +1,4 @@
-import { Store, Users, Clock, CheckCircle, RefreshCw, Package, Search } from 'lucide-react';
+import { Store, Users, Clock, CheckCircle, RefreshCw, Package, Search, Phone, Mail, FileText, MapPin, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 
@@ -93,6 +93,69 @@ export default function VendorsPage() {
                     <span className={`badge ${vendorDetail.vendor.is_active ? 'badge-success' : 'badge-danger'}`}>
                       {vendorDetail.vendor.is_active ? '● Active' : '● Inactive'}
                     </span>
+                  </div>
+                </div>
+
+                {/* Contact & Registration Info Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '20px' }}>
+                  <div className="card">
+                    <div className="card-header" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                      <h3 style={{ fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><User size={18} /> Contact Information</h3>
+                    </div>
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'var(--primary-50)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--primary)' }}><User size={18} /></div>
+                        <div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Owner Name</div>
+                          <div style={{ fontWeight: 600 }}>{vendorDetail.vendor.name}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'var(--primary-50)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--primary)' }}><Phone size={18} /></div>
+                        <div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Phone Number</div>
+                          <div style={{ fontWeight: 600 }}>+91 {vendorDetail.vendor.phone}</div>
+                        </div>
+                      </div>
+                      {vendorDetail.vendor.email && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ background: 'var(--primary-50)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--primary)' }}><Mail size={18} /></div>
+                          <div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Email Address</div>
+                            <div style={{ fontWeight: 600 }}>{vendorDetail.vendor.email}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="card">
+                    <div className="card-header" style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                      <h3 style={{ fontSize: 16, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><FileText size={18} /> Registration Details</h3>
+                    </div>
+                    <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'var(--primary-50)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--primary)' }}><FileText size={18} /></div>
+                        <div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>License Number</div>
+                          <div style={{ fontWeight: 600 }}>{vendorDetail.vendor.license_no}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'var(--primary-50)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--primary)' }}><Store size={18} /></div>
+                        <div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Vendor Code</div>
+                          <div style={{ fontWeight: 600 }}>{vendorDetail.vendor.vendor_code}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'var(--primary-50)', padding: 8, borderRadius: 'var(--radius)', color: 'var(--primary)' }}><MapPin size={18} /></div>
+                        <div>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Full Address</div>
+                          <div style={{ fontWeight: 600 }}>{vendorDetail.vendor.location}, {vendorDetail.vendor.district}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

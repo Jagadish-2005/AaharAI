@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Package, ClipboardList, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Package, ClipboardList, LogOut, Inbox } from 'lucide-react';
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage';
 import BeneficiariesPage from './pages/BeneficiariesPage';
 import DistributePage from './pages/DistributePage';
 import HistoryPage from './pages/HistoryPage';
+import GrievancesPage from './pages/GrievancesPage';
 import './index.css';
 
 function Sidebar() {
@@ -36,6 +37,10 @@ function Sidebar() {
         </NavLink>
         <NavLink to="/history" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <span className="nav-icon"><ClipboardList size={18} strokeWidth={2} /></span> <span className="nav-text">History</span>
+        </NavLink>
+        <div className="nav-section-title" style={{ marginTop: '16px' }}>Communications</div>
+        <NavLink to="/inbox" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <span className="nav-icon"><Inbox size={18} strokeWidth={2} /></span> <span className="nav-text">Inbox</span>
         </NavLink>
       </nav>
       <div className="sidebar-footer">
@@ -83,6 +88,7 @@ function AppRoutes() {
       <Route path="/beneficiaries" element={<ProtectedRoute><BeneficiariesPage /></ProtectedRoute>} />
       <Route path="/distribute" element={<ProtectedRoute><DistributePage /></ProtectedRoute>} />
       <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+      <Route path="/inbox" element={<ProtectedRoute><GrievancesPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

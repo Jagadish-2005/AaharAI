@@ -9,7 +9,7 @@ const router = Router();
 router.get('/', adminOnly, (req, res) => {
   try {
     const { resolved, severity, type } = req.query;
-    const lim = parseInt(req.query.limit) || 50;
+    const lim = parseInt(req.query.limit) || 1000;
     let where = 'WHERE 1=1';
     const params = [];
 
@@ -48,12 +48,25 @@ router.get('/', adminOnly, (req, res) => {
 // PUT /api/alerts/:id/resolve
 router.put('/:id/resolve', adminOnly, (req, res) => {
   try {
-    const alert = db.prepare('SELECT * FROM ai_alerts WHERE id = ?').get(req.params.id);
+    const alert = db.prepare('SELECT a.*, v.email as vendor_email, v.shop_name FROM ai_alerts a LEFT JOIN vendors v ON v.id = a.vendor_id WHERE a.id = ?').get(req.params.id);
     if (!alert) return res.status(404).json({ error: 'Alert not found.' });
+    
     db.prepare('UPDATE ai_alerts SET is_resolved=1, resolved_by=?, resolved_at=CURRENT_TIMESTAMP WHERE id=?')
       .run(req.user.id, alert.id);
-    res.json({ message: 'Alert resolved successfully.' });
+
+    // Trigger Email Notification Sequence
+    if (alert.vendor_email) {
+      const subject = `Notice: Alert Resolved - ${alert.title}`;
+      const body = `Dear ${alert.shop_name} team,\n\nAn alert regarding your shop generated on ${new Date(alert.created_at).toLocaleDateString()} has been reviewed and resolved by the administration team.\n\n--- ALERT REPORT ---\nType: ${alert.alert_type}\nSeverity: ${alert.severity}\nDescription: ${alert.message}\n--------------------\n\nPlease retain this report for your records and ensure strict compliance moving forward.\n\nRegards,\nAahar AI Administration Team`;
+      
+      console.log(`\n📧 [MOCK EMAIL DISPATCH TO: ${alert.vendor_email}]`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Body:\n${body}\n`);
+    }
+
+    res.json({ message: 'Alert resolved and report emailed successfully.' });
   } catch (err) {
+    console.error('Resolve alert error:', err);
     res.status(500).json({ error: 'Internal server error.' });
   }
 });

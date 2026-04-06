@@ -82,7 +82,7 @@ export default function DashboardPage() {
             <div className="stat-icon danger"><AlertTriangle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /></div>
             <div className="stat-info">
               <h4>Active Alerts</h4>
-              <div className="stat-value">{activeAlerts?.length || 0}</div>
+              <div className="stat-value">{overview.totalActiveAlerts || 0}</div>
               <div className="stat-sub">Require attention</div>
             </div>
           </div>
