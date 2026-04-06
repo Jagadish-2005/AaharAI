@@ -1,4 +1,4 @@
-import { Store, Bot, Clock, CheckCircle, Search, AlertTriangle, TrendingUp, LayoutDashboard, CircleAlert, Info } from 'lucide-react';
+import { Store, Bot, Clock, CheckCircle, Search, AlertTriangle, TrendingUp, LayoutDashboard, CircleAlert, Info, Mail } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 import api from '../services/api';
@@ -10,6 +10,7 @@ export default function AlertsPage() {
   const [loading, setLoading] = useState(true);
   const [runningDetection, setRunningDetection] = useState(false);
   const [tab, setTab] = useState('alerts');
+  const [selectedVendorStr, setSelectedVendorStr] = useState(null);
 
   const fetchAlerts = async () => {
     try {
@@ -61,6 +62,18 @@ export default function AlertsPage() {
 
   if (loading) return <div className="spinner"></div>;
 
+  const groupedAlerts = alerts.reduce((acc, alert) => {
+    const key = alert.vendor_name || 'System Level Alerts';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(alert);
+    return acc;
+  }, {});
+
+  const vendorNames = Object.keys(groupedAlerts);
+  const activeVendor = selectedVendorStr && vendorNames.includes(selectedVendorStr) 
+    ? selectedVendorStr 
+    : (vendorNames.length > 0 ? vendorNames[0] : null);
+
   return (
     <>
       <div className="page-header">
@@ -110,35 +123,81 @@ export default function AlertsPage() {
         </div>
 
         {tab === 'alerts' ? (
-          <div className="card">
-            <div className="card-body">
-              {alerts.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
+          <div>
+            {alerts.length === 0 ? (
+              <div className="card">
+                <div className="card-body" style={{ textAlign: 'center', padding: 50, color: 'var(--text-muted)' }}>
                   <div style={{ fontSize: 48, marginBottom: 12 }}><CheckCircle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /></div>
                   <h3 style={{ fontSize: 18, color: 'var(--text-secondary)' }}>No active alerts</h3>
                   <p style={{ fontSize: 13 }}>All anomalies have been resolved</p>
                 </div>
-              ) : alerts.map(a => (
-                <div className="alert-card" key={a.id}>
-                  <div className={`alert-severity ${a.severity}`}>
-                    {a.severity === 'critical' ? <CircleAlert size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> : a.severity === 'high' ? <CircleAlert size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> : a.severity === 'medium' ? <CircleAlert size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> : <Info size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />}
-                  </div>
-                  <div className="alert-content">
-                    <div className="alert-title">{a.title}</div>
-                    <div className="alert-message">{a.message}</div>
-                    <div className="alert-meta">
-                      <span className={`badge badge-${a.severity}`}>{a.severity}</span>
-                      <span>{a.alert_type.replace(/_/g, ' ')}</span>
-                      {a.vendor_name && <span><Store size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> {a.vendor_name}</span>}
-                      <span>{new Date(a.created_at).toLocaleDateString('en-IN')}</span>
-                    </div>
-                  </div>
-                  <button className="btn btn-success btn-sm" onClick={() => handleResolve(a.id)}>
-                    <CheckCircle size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> Resolve
-                  </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+                <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, color: 'var(--text-secondary)', marginBottom: 8, paddingLeft: 4 }}>Alert Locations</div>
+                  {vendorNames.map(vendorName => (
+                    <button 
+                      key={vendorName} 
+                      onClick={() => setSelectedVendorStr(vendorName)}
+                      className={`btn ${activeVendor === vendorName ? 'btn-primary' : ''}`}
+                      style={{ 
+                        justifyContent: 'space-between', 
+                        width: '100%', 
+                        textAlign: 'left', 
+                        padding: '12px 16px', 
+                        background: activeVendor === vendorName ? 'var(--primary)' : 'var(--bg)', 
+                        color: activeVendor === vendorName ? 'white' : 'var(--text)', 
+                        border: activeVendor === vendorName ? 'none' : '1px solid var(--border)',
+                        boxShadow: activeVendor === vendorName ? 'var(--shadow-sm)' : 'none'
+                      }}
+                    >
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <Store size={16} /> {vendorName}
+                      </span>
+                      <span className={`badge ${activeVendor === vendorName ? 'badge-info' : 'badge-danger'}`} style={{ marginLeft: 8, background: activeVendor === vendorName ? 'rgba(255,255,255,0.2)' : undefined, color: activeVendor === vendorName ? 'white' : undefined }}>
+                        {groupedAlerts[vendorName].length}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+                
+                <div style={{ flex: 1 }}>
+                  {activeVendor && (
+                    <div className="card" style={{ margin: 0 }}>
+                      <div className="card-header" style={{ background: 'var(--bg)', padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                        <h3 style={{ margin: 0, fontSize: '18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <Store size={20} style={{ color: 'var(--primary)' }}/> 
+                          {activeVendor}
+                          <span className="badge badge-danger">{groupedAlerts[activeVendor].length} Alerts</span>
+                        </h3>
+                      </div>
+                      <div className="card-body" style={{ padding: 0 }}>
+                        {groupedAlerts[activeVendor].map((a, index) => (
+                          <div className="alert-card" key={a.id} style={{ margin: 0, borderBottom: index < groupedAlerts[activeVendor].length - 1 ? '1px solid var(--border-light)' : 'none', borderRadius: 0, boxShadow: 'none' }}>
+                            <div className={`alert-severity ${a.severity}`}>
+                              {a.severity === 'critical' ? <CircleAlert size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> : a.severity === 'high' ? <CircleAlert size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> : a.severity === 'medium' ? <CircleAlert size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> : <Info size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} />}
+                            </div>
+                            <div className="alert-content">
+                              <div className="alert-title">{a.title}</div>
+                              <div className="alert-message">{a.message}</div>
+                              <div className="alert-meta">
+                                <span className={`badge badge-${a.severity}`}>{a.severity}</span>
+                                <span>{a.alert_type.replace(/_/g, ' ')}</span>
+                                <span>{new Date(a.created_at).toLocaleDateString('en-IN')}</span>
+                              </div>
+                            </div>
+                            <button className="btn btn-success btn-sm" onClick={() => handleResolve(a.id)}>
+                              <Mail size={18} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '6px' }} /> Resolve & Email
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="card">

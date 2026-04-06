@@ -1,4 +1,4 @@
-const API_URL = `http://${window.location.hostname}:3001/api`;
+const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3001/api`;
 
 class ApiService {
   constructor() {
@@ -44,6 +44,9 @@ class ApiService {
   getBeneficiaries(params = '') { return this.get(`/beneficiaries?${params}`); }
   getBeneficiary(id) { return this.get(`/beneficiaries/${id}`); }
   lookupBeneficiary(rationCard) { return this.get(`/beneficiaries/lookup/${rationCard}`); }
+
+  // Grievances
+  getMyGrievances(params = '') { return this.get(`/grievances/mine?${params}`); }
 
   // Distribution
   generateOTP(beneficiaryId, lang = 'en', useVoice = false) { return this.post('/distribution/generate-otp', { beneficiaryId, lang, useVoice }); }

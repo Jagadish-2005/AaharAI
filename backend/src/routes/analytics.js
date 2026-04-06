@@ -22,6 +22,8 @@ router.get('/dashboard', adminOnly, (req, res) => {
       SELECT COUNT(DISTINCT beneficiary_id) as count FROM distributions WHERE month = ? AND year = ? AND status = 'completed'
     `).get(month, year).count;
 
+    const totalActiveAlerts = db.prepare('SELECT COUNT(*) as count FROM ai_alerts WHERE is_resolved = 0').get().count;
+
     // Stock overview
     const stockOverview = db.prepare(`
       SELECT c.name as commodity, c.unit,
@@ -85,7 +87,8 @@ router.get('/dashboard', adminOnly, (req, res) => {
         totalDistributions,
         servedBeneficiaries,
         pendingBeneficiaries: totalBeneficiaries - servedBeneficiaries,
-        distributionRate: totalBeneficiaries > 0 ? Math.round(servedBeneficiaries / totalBeneficiaries * 100) : 0
+        distributionRate: totalBeneficiaries > 0 ? Math.round(servedBeneficiaries / totalBeneficiaries * 100) : 0,
+        totalActiveAlerts
       },
       stockOverview,
       vendorPerformance,
